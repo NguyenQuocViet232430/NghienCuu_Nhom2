@@ -1,0 +1,85 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging / archives
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments (CRITICAL: exclude massive environments)
+.venv/
+.venv*/
+venv/
+venv*/
+ENV/
+env/
+env*/
+**/.venv/
+**/.venv*/
+**/.test-deps/
+
+# Node / Web Frontend
+node_modules/
+**/node_modules/
+.npm/
+dist/
+dist-ssr/
+*.local
+
+# Logs and Server state
+logs/
+**/logs/
+*.log
+*.err
+*.out
+
+# Checkpoints, Embeddings, Knowledge Bases & Pretrained Models (>100MB, stored on Drive)
+*.pth
+*.pt
+*.bin
+*.npy
+*.index
+text_embeddings_train_restval.npy
+text_embedding_mapping.jsonl
+**/models/level5/*
+!**/models/level5/.gitkeep
+**/models/reltr/*
+!**/models/reltr/.gitkeep
+**/clip_cache/*
+!**/clip_cache/.gitkeep
+
+# Jupyter Notebook checkpoints & autosaves
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+**/.ipynb_checkpoints/*
+
+# IDE, OS, and system caches
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
