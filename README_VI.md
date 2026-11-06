@@ -1,5 +1,7 @@
 # SemRAG: Mô Hình Sinh Chú Thích Ảnh Tăng Cường Truy Hồi Dẫn Dắt Bởi Đồ Thị Cảnh Và Hợp Nhất Đa Token Có Cổng Trên Kho Tri Thức Đa Tầng V2
 
+> 🌐 **Ngôn ngữ / Language:** **Tiếng Việt** | [🇺🇸 **Click here for English Version (README.md)**](README.md)
+
 [![Language](https://img.shields.io/badge/Ng%C3%B4n%20ng%E1%BB%AF-English-blue.svg)](README.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.2%2B-ee4c2c.svg)](https://pytorch.org/)

@@ -1,5 +1,7 @@
 # SemRAG: Scene-Graph Guided Retrieval-Augmented Image Captioning with Gated Multi-Token Fusion and Structured Knowledge Base V2
 
+> 🌐 **Language / Ngôn ngữ:** **English** | [🇻🇳 **Bấm vào đây để xem toàn bộ nội dung bằng Tiếng Việt**](README_VI.md)
+
 [![Language](https://img.shields.io/badge/Language-Ti%E1%BA%BFng%20Vi%E1%BB%87t-blue.svg)](README_VI.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-brightgreen.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.2%2B-ee4c2c.svg)](https://pytorch.org/)
