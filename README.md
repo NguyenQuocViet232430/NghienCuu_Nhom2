@@ -1,4 +1,4 @@
-# SemRAG: Scene-Graph Guided Retrieval-Augmented Image Captioning with Gated Multi-Token Fusion and Structured Knowledge Base V2
+# SemRAG: Scene-Graph Guided Retrieval-Augmented Image Captioning with Gated Multi-Token Fusion and Structured Knowledge Base
 
 > 🌐 **Language / Ngôn ngữ:** **English** | [🇻🇳 **Bấm vào đây để xem toàn bộ nội dung bằng Tiếng Việt**](README_VI.md)
 
@@ -23,13 +23,13 @@
 - [2. System Architecture](#2-system-architecture)
   - [Block A: Input Multimodal Encoding](#block-a-input-multimodal-encoding)
   - [Block B: Hybrid Reranking & Diversity Selection (MMR)](#block-b-hybrid-reranking--diversity-selection-mmr)
-  - [Block C: Multi-Layer Structured Knowledge Base (SemKB V2)](#block-c-multi-layer-structured-knowledge-base-semkb-v2)
+  - [Block C: Multi-Layer Structured Knowledge Base (SemKB)](#block-c-multi-layer-structured-knowledge-base-semkb)
   - [Block D: Gated Multi-Token Fusion Decoder](#block-d-gated-multi-token-fusion-decoder)
 - [3. Key Benchmark Results](#3-key-benchmark-results)
-  - [MS COCO 2014 (Progressive Levels 1–5 across 3 Seeds)](#ms-coco-2014-progressive-levels-15-across-3-seeds)
+  - [MS COCO 2014 Benchmark (Model Progression across 3 Seeds)](#ms-coco-2014-benchmark-model-progression-across-3-seeds)
   - [Flickr30k Evaluation (In-Domain Option A vs. Zero-Shot Option B)](#flickr30k-evaluation-in-domain-option-a-vs-zero-shot-option-b)
   - [Comprehensive Ablation Study](#comprehensive-ablation-study)
-  - [Modality Isolation (Visual-Only vs. Retrieval-Only Level 6)](#modality-isolation-visual-only-vs-retrieval-only-level-6)
+  - [Modality Isolation (Visual-Only vs. Retrieval-Only Mode)](#modality-isolation-visual-only-vs-retrieval-only-mode)
   - [Parameter Sensitivity Analysis ($K$ and $M$)](#parameter-sensitivity-analysis-k-and-m)
 - [4. Interactive Web Application](#4-interactive-web-application)
 - [5. Repository Structure & Notebook Index](#5-repository-structure--notebook-index)
@@ -49,14 +49,14 @@ Standard image captioning systems rely exclusively on direct visual features ext
 1. **Factual Hallucinations:** Inventing non-existent objects or hallucinating erroneous attributes due to language prior biases.
 2. **Generic, Dull Captions:** Producing repetitive descriptions that fail to convey nuanced interactions and contextual relationships.
 
-Retrieval-Augmented Generation (RAG) mitigates these bottlenecks by conditioning generation on external knowledge retrieved from verified human-annotated corpora. However, conventional RAG systems (KB V1) face severe obstacles:
+Retrieval-Augmented Generation (RAG) mitigates these bottlenecks by conditioning generation on external knowledge retrieved from verified human-annotated corpora. However, conventional RAG systems (Old SemKB) face severe obstacles:
 * **Duplicate candidate bias:** Lexically redundant captions flood the nearest-neighbor search.
 * **Surface lexical matching:** Simple cosine or unigram matching overlooks structured syntactic roles (Subject–Predicate–Object).
 * **Mean-pooling representation bottleneck:** Compressing multiple retrieved candidates into a single averaged vector loses individual descriptive nuances.
 
 ### The SemRAG Solution
 To resolve these challenges, **SemRAG** introduces:
-1. **Multi-Layer Structured Knowledge Base V2 (SemKB V2):** Augments raw captions with canonical deduplication flags (`duplicate_of`), standardized object entities, explicit RelTR Subject–Predicate–Object (`SPO`) relation triplets, actions, attributes, and corpus-wide 1–4 gram TF-IDF consensus weights.
+1. **Multi-Layer Structured Knowledge Base (SemKB):** Augments raw captions with canonical deduplication flags (`duplicate_of`), standardized object entities, explicit RelTR Subject–Predicate–Object (`SPO`) relation triplets, actions, attributes, and corpus-wide 1–4 gram TF-IDF consensus weights.
 2. **Scene-Graph-Guided Hybrid Reranking & MMR:** Combines global CLIP visual-semantic similarity with explicit SPO relation alignment, filtered through Maximal Marginal Relevance (MMR, $\lambda=0.7$) to eliminate redundancy.
 3. **Dynamic Gated Multi-Token Fusion Decoder:** Projects Top-$K$ retrieved candidates as independent memory slots ($K \times 256$) and employs an adaptive gating mechanism ($g \in [0, 1]$) to balance visual observation and external knowledge dynamically.
 
@@ -73,7 +73,7 @@ The overall architecture consists of four collaborative blocks as illustrated in
 |                                                                                             |
 |   +-----------------------+                         +-----------------------------------+   |
 |   |   BLOCK A: INPUT      |                         |   BLOCK C: MULTI-LAYER KNOWLEDGE  |   |
-|   |                       |                         |            BASE (SemKB V2)        |   |
+|   |                       |                         |            BASE (SemKB)           |   |
 |   |  - Query Image        |                         |                                   |   |
 |   |  - CLIP ViT-B/32      |                         |  - 566,747 Multimodal Records     |   |
 |   |    Embedding (512d)   |                         |  - Canonical Deduplication Flag   |   |
@@ -116,13 +116,13 @@ The overall architecture consists of four collaborative blocks as illustrated in
 
 ### Block B: Hybrid Reranking & Diversity Selection (MMR)
 * **Initial Dense Query:** Queries FAISS (`IndexFlatIP`) to retrieve $N = 50$ candidate captions based on inner-product similarity $\tilde{S}_{\text{CLIP}}(I, c_i)$.
-* **Semantic SPO Reranking:** Computes semantic compatibility $S_{\text{SPO-Sem}}$ between the image query scene graph and the pre-extracted candidate triplets in SemKB V2. The hybrid score is defined as:
+* **Semantic SPO Reranking:** Computes semantic compatibility $S_{\text{SPO-Sem}}$ between the image query scene graph and the pre-extracted candidate triplets in SemKB. The hybrid score is defined as:
   $$S_{\text{rel}}(I, c_i) = w \cdot \tilde{S}_{\text{CLIP}}(I, c_i) + (1 - w) \cdot S_{\text{SPO-Sem}}(G(I), G_{\text{KB}}(c_i)), \quad w = 0.6$$
 * **Maximal Marginal Relevance (MMR):** Selects $K = 5$ diverse, non-redundant candidates:
   $$\text{MMR} = \arg\max_{c_i \in C \setminus S} \left[ \lambda S_{\text{rel}}(I, c_i) - (1 - \lambda) \max_{c_j \in S} \text{Sim}(c_i, c_j) \right], \quad \lambda = 0.7$$
   where $\text{Sim}(c_i, c_j) = 0.65 \cdot \text{Sim}_{\text{CLIP}} + 0.35 \cdot \text{Jaccard}_{\text{SPO}}$.
 
-### Block C: Multi-Layer Structured Knowledge Base (SemKB V2)
+### Block C: Multi-Layer Structured Knowledge Base (SemKB)
 | Specification | MS COCO 2014 (`knowledge_base_level4`) | Flickr30k (`knowledge_base_level4_Flick30K`) |
 | :--- | :--- | :--- |
 | **Total Split Records** | **566,747 entries** (Train + Restval, 113,287 images) | **145,000 entries** (Train, 29,000 images) |
@@ -151,19 +151,19 @@ All experiments strictly adhere to a **100% controlled benchmarking protocol**:
 - Fixed vocabulary (`vocab.json`, 16,214 words on COCO; 9,546 on Flickr30k).
 - Evaluated across **3 standard independent seeds: `[42, 44, 46]`** on standard 5,000 Karpathy test images (COCO) and 1,000 test images (Flickr30k).
 
-### MS COCO 2014 (Progressive Levels 1–5 across 3 Seeds)
+### MS COCO 2014 Benchmark (Model Progression across 3 Seeds)
 
 Results reported as $\text{Mean} \pm \text{SD}$ on MS COCO 2014 Karpathy Test split (5,000 images / 25,010 references, evaluated via official `SafePTBTokenizer`):
 
-| Model Level & Configuration | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | METEOR | ROUGE-L | CIDEr (SemKB V2) | CIDEr (Old V1) | $\Delta$ CIDEr | SPICE (SemKB V2) |
+| Model & Configuration | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | METEOR | ROUGE-L | CIDEr (SemKB) | CIDEr (Old SemKB) | $\Delta$ CIDEr | SPICE (SemKB) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Level 1: Visual-Only Baseline** (Beam=3, No KB) | 74.21±0.19 | 57.80±0.21 | 44.12±0.17 | 33.68±0.14 | 26.77±0.10 | 54.99±0.13 | **107.15 ± 0.74** | 107.15 | 0.00 | 19.73 ± 0.10 |
-| **Level 2: Basic RAG** (CLIP Top-5 Mean-Pool) | 74.92±0.10 | 58.54±0.04 | 44.78±0.02 | 34.34±0.02 | 27.41±0.04 | 55.84±0.01 | **112.52 ± 0.34** | 107.57 | **+4.95** | 20.16 ± 0.16 |
-| **Level 3: Scene-Graph Reranked RAG** (RelTR SPO) | 74.97±0.21 | 58.54±0.15 | 45.00±0.10 | 34.71±0.09 | 27.68±0.02 | 55.95±0.05 | **114.13 ± 0.28** | 110.64 | **+3.49** | 20.68 ± 0.03 |
-| **Level 4: Gated Multi-Token RAG** (5 Tokens, No MMR)| 74.83±0.07 | 58.43±0.06 | 44.96±0.08 | 34.73±0.08 | 27.82±0.01 | 55.93±0.01 | **114.81 ± 0.20** | 110.97 | **+3.84** | 20.67 ± 0.04 |
-| **Level 5: Full Proposed SemRAG** (RelTR+MMR+Gated) | **74.92±0.05** | **58.57±0.03** | **45.13±0.04** | **34.90±0.06** | **27.85±0.02** | **56.01±0.01** | **115.41 ± 0.07** | 111.63 | **+3.78** | **20.76 ± 0.02** |
+| **VOB (Visual-Only Baseline)** (Beam=3, No KB) | 74.21±0.19 | 57.80±0.21 | 44.12±0.17 | 33.68±0.14 | 26.77±0.10 | 54.99±0.13 | **107.15 ± 0.74** | 107.15 | 0.00 | 19.73 ± 0.10 |
+| **WF-RAG (Basic RAG)** (CLIP Top-5 Mean-Pool) | 74.92±0.10 | 58.54±0.04 | 44.78±0.02 | 34.34±0.02 | 27.41±0.04 | 55.84±0.01 | **112.52 ± 0.34** | 107.57 | **+4.95** | 20.16 ± 0.16 |
+| **RR-RAG (Scene-Graph Reranked RAG)** (RelTR SPO) | 74.97±0.21 | 58.54±0.15 | 45.00±0.10 | 34.71±0.09 | 27.68±0.02 | 55.95±0.05 | **114.13 ± 0.28** | 110.64 | **+3.49** | 20.68 ± 0.03 |
+| **GM-RAG (Gated Multi-Token RAG)** (5 Tokens, No MMR)| 74.83±0.07 | 58.43±0.06 | 44.96±0.08 | 34.73±0.08 | 27.82±0.01 | 55.93±0.01 | **114.81 ± 0.20** | 110.97 | **+3.84** | 20.67 ± 0.04 |
+| **SemRAG (Proposed Full Model)** (RelTR+MMR+Gated) | **74.92±0.05** | **58.57±0.03** | **45.13±0.04** | **34.90±0.06** | **27.85±0.02** | **56.01±0.01** | **115.41 ± 0.07** | 111.63 | **+3.78** | **20.76 ± 0.02** |
 
-* Per-seed breakdown for Level 5: Seed 42 = **115.38**, Seed 44 = **115.36**, Seed 46 = **115.49** CIDEr.
+* Per-seed breakdown for SemRAG: Seed 42 = **115.38**, Seed 44 = **115.36**, Seed 46 = **115.49** CIDEr.
 * Hallucination metrics on MS COCO Test: $\text{CHAIR}_s = \mathbf{8.21 \pm 0.08\%}$, $\text{CHAIR}_i = \mathbf{7.18 \pm 0.06\%}$.
 
 ---
@@ -172,23 +172,23 @@ Results reported as $\text{Mean} \pm \text{SD}$ on MS COCO 2014 Karpathy Test sp
 
 Evaluated on Flickr30k 1,000 Karpathy test images across Seeds `[42, 44, 46]`:
 
-#### Option A: In-Domain Flickr30k Evaluation (Trained on Flickr30k + SemKB Flickr30k V2)
-| Model Level | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr (SemKB V2) | $\Delta$ vs L1 | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
+#### Option A: In-Domain Flickr30k Evaluation (Trained on Flickr30k + Flickr30k SemKB)
+| Model & Configuration | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr (SemKB) | $\Delta$ vs VOB | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Level 1 Baseline** | 68.85±0.38 | 25.89±0.24 | 21.10±0.13 | 48.14±0.16 | **53.85 ± 0.62** | 0.00 | 14.82±0.19 | 13.27±0.38 | 9.64±0.25 |
-| **Level 2 Basic RAG** | 67.66±0.22 | 25.21±0.09 | 21.44±0.02 | 48.20±0.12 | **58.29 ± 0.22** | +4.44 | 15.27±0.04 | 11.40±0.10 | 8.03±0.06 |
-| **Level 3 SPO Rerank**| 69.97±0.66 | 26.44±0.29 | 21.90±0.05 | 49.02±0.11 | **59.53 ± 0.18** | +5.68 | 15.63±0.05 | 10.57±0.12 | 7.68±0.21 |
-| **Level 4 Gated 5-Token**| 70.89±0.15 | 26.95±0.08 | 21.92±0.06 | 49.20±0.14 | **60.70 ± 0.18** | +6.85 | 15.68±0.05 | 9.63±0.06 | 7.19±0.03 |
-| **Level 5 Full SemRAG**| **71.04±0.18** | **27.26±0.07** | **22.03±0.06** | **49.37±0.10** | **61.98 ± 0.21** | **+8.13** | **15.77±0.01** | **8.63 ± 0.06** | **6.47 ± 0.05** |
+| **VOB (Visual-Only Baseline)** | 68.85±0.38 | 25.89±0.24 | 21.10±0.13 | 48.14±0.16 | **53.85 ± 0.62** | 0.00 | 14.82±0.19 | 13.27±0.38 | 9.64±0.25 |
+| **WF-RAG (Basic RAG)** | 67.66±0.22 | 25.21±0.09 | 21.44±0.02 | 48.20±0.12 | **58.29 ± 0.22** | +4.44 | 15.27±0.04 | 11.40±0.10 | 8.03±0.06 |
+| **RR-RAG (Scene-Graph Reranked RAG)**| 69.97±0.66 | 26.44±0.29 | 21.90±0.05 | 49.02±0.11 | **59.53 ± 0.18** | +5.68 | 15.63±0.05 | 10.57±0.12 | 7.68±0.21 |
+| **GM-RAG (Gated Multi-Token RAG)**| 70.89±0.15 | 26.95±0.08 | 21.92±0.06 | 49.20±0.14 | **60.70 ± 0.18** | +6.85 | 15.68±0.05 | 9.63±0.06 | 7.19±0.03 |
+| **SemRAG (Proposed Full Model)**| **71.04±0.18** | **27.26±0.07** | **22.03±0.06** | **49.37±0.10** | **61.98 ± 0.21** | **+8.13** | **15.77±0.01** | **8.63 ± 0.06** | **6.47 ± 0.05** |
 
-#### Option B: Zero-Shot Cross-Domain Transfer (COCO Model + COCO SemKB V2 directly evaluated on Flickr30k)
-| Model Level | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr | $\Delta$ vs L1 | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
+#### Option B: Zero-Shot Cross-Domain Transfer (COCO Model + COCO SemKB directly evaluated on Flickr30k)
+| Model & Configuration | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr | $\Delta$ vs VOB | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Level 1 COCO Baseline** | 58.79±0.01 | 17.12±0.03 | 17.23±0.03 | 41.02±0.05 | **37.83 ± 0.14** | 0.00 | 10.95±0.04 | 36.10±0.10 | 23.29±0.03 |
-| **Level 2 COCO Basic RAG** | 59.15±0.46 | 17.41±0.23 | 17.75±0.22 | 41.69±0.31 | **41.51 ± 0.99** | +3.68 | 11.35±0.14 | 26.80±0.10 | 17.48±0.10 |
-| **Level 3 COCO RelTR Rerank**| 59.73±0.18 | 18.16±0.03 | 17.98±0.11 | 42.08±0.20 | **42.93 ± 0.56** | +5.10 | 11.81±0.10 | 24.40±0.10 | 16.07±0.04 |
-| **Level 4 COCO Gated Multi** | 60.07±0.27 | 18.22±0.25 | 17.98±0.09 | 42.17±0.12 | **43.36 ± 0.24** | +5.53 | 11.92±0.11 | 22.10±0.10 | 14.84±0.07 |
-| **Level 5 COCO Full SemRAG** | **60.77±0.08** | **19.00±0.11** | **18.12±0.04** | **42.71±0.05** | **44.88 ± 0.21** | **+7.05 (+18.6%)**| **12.08±0.00** | **19.80 ± 0.10** | **13.82 ± 0.03** |
+| **VOB (COCO Baseline)** | 58.79±0.01 | 17.12±0.03 | 17.23±0.03 | 41.02±0.05 | **37.83 ± 0.14** | 0.00 | 10.95±0.04 | 36.10±0.10 | 23.29±0.03 |
+| **WF-RAG (COCO Basic RAG)** | 59.15±0.46 | 17.41±0.23 | 17.75±0.22 | 41.69±0.31 | **41.51 ± 0.99** | +3.68 | 11.35±0.14 | 26.80±0.10 | 17.48±0.10 |
+| **RR-RAG (COCO RelTR Rerank)**| 59.73±0.18 | 18.16±0.03 | 17.98±0.11 | 42.08±0.20 | **42.93 ± 0.56** | +5.10 | 11.81±0.10 | 24.40±0.10 | 16.07±0.04 |
+| **GM-RAG (COCO Gated Multi-Token)** | 60.07±0.27 | 18.22±0.25 | 17.98±0.09 | 42.17±0.12 | **43.36 ± 0.24** | +5.53 | 11.92±0.11 | 22.10±0.10 | 14.84±0.07 |
+| **SemRAG (COCO Proposed Model)** | **60.77±0.08** | **19.00±0.11** | **18.12±0.04** | **42.71±0.05** | **44.88 ± 0.21** | **+7.05 (+18.6%)**| **12.08±0.00** | **19.80 ± 0.10** | **13.82 ± 0.03** |
 
 > **Key Transfer Takeaway:** Under zero retraining and zero domain fine-tuning, SemRAG boosts CIDEr by **+7.05 points (+18.64%)** and drastically cuts sentence hallucination rate ($\text{CHAIR}_s$) from **36.10% down to 19.80% (a 16.30 percentage point reduction)**.
 
@@ -198,9 +198,9 @@ Evaluated on Flickr30k 1,000 Karpathy test images across Seeds `[42, 44, 46]`:
 
 Isolated on MS COCO 2014 Karpathy Test (5,000 images, 3 Seeds `[42, 44, 46]`):
 
-| Ablation Configuration | Notebook Identifier | BLEU-4 | METEOR | CIDEr (SemKB V2) | $\Delta$ CIDEr | SPICE (SemKB V2) | $\Delta$ SPICE |
+| Ablation Configuration | Notebook Identifier | BLEU-4 | METEOR | CIDEr (SemKB) | $\Delta$ CIDEr | SPICE (SemKB) | $\Delta$ SPICE |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Full Proposed SemRAG** | `Level 5 Baseline` | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **0.00** | **20.76 ± 0.02** | **0.00** |
+| **SemRAG (Proposed Full Model)** | Proposed Pipeline | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **0.00** | **20.76 ± 0.02** | **0.00** |
 | $\text{w/o MMR Diversity}$ | `Ablation_01 (no_mmr)` | 34.83 ± 0.05 | 27.82 ± 0.02 | **114.70 ± 0.11** | **-0.72** | 20.66 ± 0.04 | **-0.10** |
 | $\text{w/o WordNet / SPO Expansion}$ | `Ablation_02 (no_semantic_expansion)` | 34.63 ± 0.11 | 27.74 ± 0.03 | **113.95 ± 0.14** | **-1.47** | 20.49 ± 0.02 | **-0.27** |
 | $\text{w/o Multi-Token Memory}$ (Mean-Pool)| `Ablation_04A (no_multitoken_only)` | 34.83 ± 0.09 | 27.75 ± 0.02 | **113.80 ± 0.05** | **-1.61** | 20.58 ± 0.03 | **-0.18** |
@@ -211,18 +211,18 @@ Isolated on MS COCO 2014 Karpathy Test (5,000 images, 3 Seeds `[42, 44, 46]`):
 
 ---
 
-### Modality Isolation (Visual-Only vs. Retrieval-Only Level 6)
+### Modality Isolation (Visual-Only vs. Retrieval-Only Mode)
 
-Evaluating the extreme mode where the visual pathway is completely zeroed out ($v_{\text{img}} = \mathbf{0}, g = 1.0$) demonstrates the rich semantic encoding of SemKB V2:
+Evaluating the extreme mode where the visual pathway is completely zeroed out ($v_{\text{img}} = \mathbf{0}, g = 1.0$) demonstrates the rich semantic encoding of SemKB:
 
 | Modality Setting | Gate State $g$ | Test Set Scope | BLEU-4 | METEOR | CIDEr (Mean ± SD) | SPICE |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Visual-Only Baseline (Level 1)** | $g = 0.00$ | 5,000 images | 33.68 ± 0.14 | 26.77 ± 0.10 | **107.15 ± 0.74** | 19.73 ± 0.10 |
-| **Retrieval-Only (Old SemKB V1)** | $g = 1.00$ | 5,000 images | 25.12 | 22.99 | **81.44** | 15.75 |
-| **Retrieval-Only (Old SemKB V1)** | $g = 1.00$ | 4,464 RelTR images | 25.52 ± 0.10 | 23.21 ± 0.03 | **81.86 ± 0.08** | 15.83 ± 0.08 |
-| **Retrieval-Only (SemKB V2 — Level 6)** | $g = 1.00$ | 5,000 images | 30.89 ± 0.02 | 26.06 ± 0.03 | **103.41 ± 0.16** *(+21.97 vs V1)* | 18.94 ± 0.02 |
-| **Retrieval-Only (SemKB V2 — Level 6)** | $g = 1.00$ | 4,464 RelTR images | 31.56 ± 0.01 | 26.39 ± 0.02 | **104.75 ± 0.13** *(+22.89 vs V1)* | 19.20 ± 0.01 |
-| **Full Proposed SemRAG (Level 5)** | $g \approx 0.50$ (learned) | 5,000 images | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **20.76 ± 0.02** |
+| **VOB (Visual-Only Baseline)** |  = 0.00$ | 5,000 images | 33.68 ± 0.14 | 26.77 ± 0.10 | **107.15 ± 0.74** | 19.73 ± 0.10 |
+| **Retrieval-Only (Old SemKB)** |  = 1.00$ | 5,000 images | 25.12 | 22.99 | **81.44** | 15.75 |
+| **Retrieval-Only (Old SemKB)** |  = 1.00$ | 4,464 RelTR images | 25.52 ± 0.10 | 23.21 ± 0.03 | **81.86 ± 0.08** | 15.83 ± 0.08 |
+| **Retrieval-Only (SemKB)** |  = 1.00$ | 5,000 images | 30.89 ± 0.02 | 26.06 ± 0.03 | **103.41 ± 0.16** *(+21.97 vs Old SemKB)* | 18.94 ± 0.02 |
+| **Retrieval-Only (SemKB)** |  = 1.00$ | 4,464 RelTR images | 31.56 ± 0.01 | 26.39 ± 0.02 | **104.75 ± 0.13** *(+22.89 vs Old SemKB)* | 19.20 ± 0.01 |
+| **SemRAG (Proposed Full Model)** |  \approx 0.50$ (learned) | 5,000 images | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **20.76 ± 0.02** |
 
 ---
 
@@ -251,7 +251,7 @@ An interactive web dashboard is provided in `UngDung/` for live demonstration an
 * **Frontend:** React 19, Vite, Tailwind CSS, Lucide Icons.
 * **Key Features:**
   - Drag-and-drop support for `.png`, `.jpg`, `.jpeg`, and `.webp` images.
-  - Side-by-side comparison mode: **Baseline Visual-Only ($g = 0$)** vs. **SemRAG with SemKB V2 ($g \text{ adaptive})$**.
+  - Side-by-side comparison mode: **Baseline Visual-Only ($g = 0$)** vs. **SemRAG with SemKB ($g \text{ adaptive})$**.
   - Dynamic gate value inspection and manual override slider.
   - Transparent visualization of retrieved candidate captions, similarity scores, and RelTR SPO relation triplets.
   - Detailed diagnostic panel detailing runtime latency and token probabilities.
@@ -270,23 +270,23 @@ NghienCuu_Nhom2/
 ├── readme_va_prompt_ngucanh_toanbo_duan_kb_v2_nhom02.md           # Full master context and audit log
 │
 ├── Coco/                                                           # MS COCO 2014 Experiments (8 Notebooks)
-│   ├── Knowledge_Base_V2_Improved_Full.ipynb                       # Build SemKB V2 (566,747 entries)
+│   ├── Knowledge_Base_V2_Improved_Full.ipynb                       # Build SemKB (566,747 entries)
 │   ├── Baseline_Level_1_COCO2014_MultiSeed_BeamSearch_k3_Seed42.ipynb
 │   ├── Baseline_Level_1_COCO2014_MultiSeed_BeamSearch_k3_Seed44.ipynb
 │   ├── Baseline_Level_1_COCO2014_MultiSeed_BeamSearch_k3_Seed46.ipynb
-│   ├── DanhGia_Level2_3Seeds_CaiTien_COCO_KetQua3.ipynb            # Level 2 Evaluation (Seeds 42, 44, 46)
-│   ├── DanhGia_Level3_3Seeds_CaiTien_COCO_KetQua3.ipynb            # Level 3 Evaluation (Seeds 42, 44, 46)
-│   ├── DanhGia_Level4_3Seeds_CaiTien_COCO_KetQua6.ipynb            # Level 4 Evaluation (Seeds 42, 44, 46)
-│   └── DanhGia_Level5_3Seeds_CaiTien_COCO_KetQua5.ipynb            # Level 5 Full Proposed (Seeds 42, 44, 46)
+│   ├── DanhGia_Level2_3Seeds_CaiTien_COCO_KetQua3.ipynb            # WF-RAG Evaluation (Seeds 42, 44, 46)
+│   ├── DanhGia_Level3_3Seeds_CaiTien_COCO_KetQua3.ipynb            # RR-RAG Evaluation (Seeds 42, 44, 46)
+│   ├── DanhGia_Level4_3Seeds_CaiTien_COCO_KetQua6.ipynb            # GM-RAG Evaluation (Seeds 42, 44, 46)
+│   └── DanhGia_Level5_3Seeds_CaiTien_COCO_KetQua5.ipynb            # SemRAG Full Proposed Model (Seeds 42, 44, 46)
 │
 ├── flick30k/                                                       # Flickr30k Experiments (11 Notebooks)
 │   ├── PhuongAn_A/                                                 # In-Domain Flickr30k Evaluation
-│   │   ├── Tao_Kho_Tri_Thuc_V2_Flickr30k_CaiTien_KetQua.ipynb     # Build Flickr30k SemKB V2 (145k entries)
-│   │   ├── DanhGia_Level1_3Seeds_Baseline_Flickr30k_KetQua.ipynb   # Level 1 Baseline (Seeds 42, 44, 46)
-│   │   ├── DanhGia_Level2_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 2 Basic RAG (Seeds 42, 44, 46)
-│   │   ├── DanhGia_Level3_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 3 SPO Rerank (Seeds 42, 44, 46)
-│   │   ├── DanhGia_Level4_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 4 Gated Multi (Seeds 42, 44, 46)
-│   │   └── DanhGia_Level5_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 5 Full Proposed (Seeds 42, 44, 46)
+│   │   ├── Tao_Kho_Tri_Thuc_V2_Flickr30k_CaiTien_KetQua.ipynb     # Build Flickr30k SemKB (145k entries)
+│   │   ├── DanhGia_Level1_3Seeds_Baseline_Flickr30k_KetQua.ipynb   # VOB Baseline Flickr30k (Seeds 42, 44, 46)
+│   │   ├── DanhGia_Level2_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # WF-RAG Flickr30k (Seeds 42, 44, 46)
+│   │   ├── DanhGia_Level3_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # RR-RAG Flickr30k (Seeds 42, 44, 46)
+│   │   ├── DanhGia_Level4_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # GM-RAG Flickr30k (Seeds 42, 44, 46)
+│   │   └── DanhGia_Level5_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # SemRAG Full Proposed Model (Seeds 42, 44, 46)
 │   │
 │   └── PhuongAn_B/                                                 # Zero-Shot Cross-Domain Transfer (COCO -> Flickr30k)
 │       ├── PA_B_BeNguyenCOCO_ChamFlickr30k_Level1_3Seeds_KetQua.ipynb
@@ -297,7 +297,7 @@ NghienCuu_Nhom2/
 │
 ├── Boc_Tach/                                                       # Ablation & Parameter Analyses (8 Notebooks)
 │   ├── Chi_Dung_TriThuc/
-│   │   └── DanhGia_Level6_ChiDungTriThuc_KB_V2_COCO_KetQua.ipynb   # Modality Isolation (Retrieval-Only Level 6)
+│   │   └── DanhGia_Level6_ChiDungTriThuc_KB_V2_COCO_KetQua.ipynb   # Modality Isolation (Retrieval-Only Mode)
 │   ├── Tach_Dimersity/
 │   │   └── Ablation_01_Tach_MMR_Diversity_KB_V2_COCO_KetQua.ipynb # w/o MMR Diversity Selection
 │   ├── Tach_Sematic/
@@ -350,7 +350,7 @@ pip install -r requirements.txt
 
 ### Downloading Model Checkpoints & Knowledge Base from Google Drive
 
-Pretrained checkpoints and large SemKB V2 embedding matrices exceed GitHub's 100MB file limit. We provide an automated downloader with SHA-256 integrity verification:
+Pretrained checkpoints and large SemKB embedding matrices exceed GitHub's 100MB file limit. We provide an automated downloader with SHA-256 integrity verification:
 
 ```bash
 cd UngDung
@@ -394,12 +394,12 @@ Navigate to `Coco/`, `flick30k/`, or `Boc_Tach/` and run all cells. All 27 noteb
 
 ## 7. Citation & BibTeX
 
-If you find this research, code, or SemKB V2 knowledge base useful in your academic work, please cite our graduation thesis:
+If you find this research, code, or SemKB knowledge base useful in your academic work, please cite our graduation thesis:
 
 ```bibtex
 @thesis{SemRAG_HUIT_2026,
   author    = {Ngo, Quoc Binh and Nguyen, Thi Quyen and Nguyen, Quoc Viet},
-  title     = {Scene-Graph Guided Retrieval-Augmented Image Captioning with Gated Multi-Token Fusion and Multi-Layer Structured Knowledge Base V2},
+  title     = {Scene-Graph Guided Retrieval-Augmented Image Captioning with Gated Multi-Token Fusion and Structured Knowledge Base},
   school    = {Faculty of Information Technology, Ho Chi Minh City University of Industry and Trade (HUIT)},
   year      = {2026},
   month     = {November},

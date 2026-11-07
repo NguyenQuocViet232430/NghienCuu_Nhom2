@@ -1,4 +1,4 @@
-# SemRAG: Mô Hình Sinh Chú Thích Ảnh Tăng Cường Truy Hồi Dẫn Dắt Bởi Đồ Thị Cảnh Và Hợp Nhất Đa Token Có Cổng Trên Kho Tri Thức Đa Tầng V2
+# SemRAG: Mô Hình Sinh Chú Thích Ảnh Tăng Cường Truy Hồi Dẫn Dắt Bởi Đồ Thị Cảnh Và Hợp Nhất Đa Token Có Cổng Trên Kho Tri Thức Đa Tầng
 
 > 🌐 **Ngôn ngữ / Language:** **Tiếng Việt** | [🇺🇸 **Click here for English Version (README.md)**](README.md)
 
@@ -27,13 +27,13 @@
 - [2. Kiến Trúc Hệ Thống (SemRAG)](#2-kiến-trúc-hệ-thống-semrag)
   - [Khối A: Mã hóa Đa phương thức Đầu vào](#khối-a-mã-hóa-đa-phương-thức-đầu-vào)
   - [Khối B: Tái Xếp Hạng Ngữ Nghĩa & Lọc Đa Dạng MMR](#khối-b-tái-xếp-hạng-ngữ-nghĩa--lọc-đa-dạng-mmr)
-  - [Khối C: Kho Tri Thức Cấu Trúc Đa Tầng (SemKB V2)](#khối-c-kho-tri-thức-cấu-trúc-đa-tầng-semkb-v2)
+  - [Khối C: Kho Tri Thức Cấu Trúc Đa Tầng (SemKB)](#khối-c-kho-tri-thức-cấu-trúc-đa-tầng-semkb)
   - [Khối D: Bộ Giải Mã Hợp Nhất Đa Token Có Cổng Động](#khối-d-bộ-giải-mã-hợp-nhất-đa-token-có-cổng-động)
 - [3. Kết Quả Thực Nghiệm Đối Chứng](#3-kết-quả-thực-nghiệm-đối-chứng)
-  - [Thực nghiệm Lũy tiến 5 Cấp độ trên MS COCO 2014](#thực-nghiệm-lũy-tiến-5-cấp-độ-trên-ms-coco-2014)
+  - [Thực Nghiệm Đối Chứng Các Mô Hình: VOB, WF-RAG, RR-RAG, GM-RAG và SemRAG trên MS COCO 2014](#thực-nghiệm-đối-chứng-các-mô-hình-vob-wf-rag-rr-rag-gm-rag-và-semrag-trên-ms-coco-2014)
   - [Thực nghiệm trên Tập Dữ Liệu Flickr30k (Phương Án A & B)](#thực-nghiệm-trên-tập-dữ-liệu-flickr30k-phương-án-a--b)
   - [Nghiên cứu Bóc Tách Thành Phần (Ablation Study)](#nghiên-cứu-bóc-tách-thành-phần-ablation-study)
-  - [Phân Tích Cô Lập Phương Thức Đầu Vào (Level 6 Chỉ Dùng Tri Thức)](#phân-tích-cô-lập-phương-thức-đầu-vào-level-6-chỉ-dùng-tri-thức)
+  - [Phân Tích Cô Lập Phương Thức Đầu Vào (Chế độ Chỉ Dùng Tri Thức tại Decoder)](#phân-tích-cô-lập-phương-thức-đầu-vào-chế-độ-chỉ-dùng-tri-thức-tại-decoder)
   - [Khảo Sát Độ Nhạy Siêu Tham Số ($K$ và $M$)](#khảo-sát-độ-nhạy-siêu-tham-số-k-và-m)
 - [4. Ứng Dụng Website Demo Tương Tác](#4-ứng-dụng-website-demo-tương-tác)
 - [5. Cấu Trúc Thư Mục & Bản Đồ Notebook](#5-cấu-trúc-thư-mục--bản-đồ-notebook)
@@ -53,14 +53,14 @@ Mô hình sinh chú thích ảnh truyền thống dựa thuần túy trên thị
 1. **Ảo giác thực thể (Object Hallucination):** Tự sinh ra các đối tượng hoặc thuộc tính sai lệch do thiên kiến thống kê của bộ giải mã ngôn ngữ.
 2. **Câu chú thích chung chung, thiếu ngữ cảnh:** Xu hướng tạo ra các câu văn rập khuôn bề mặt, không nêu bật được mối quan hệ tương tác sinh động giữa các đối tượng trong cảnh.
 
-Kỹ thuật Sinh tăng cường truy hồi (*Retrieval-Augmented Generation — RAG*) mở ra hướng tiếp cận triển vọng bằng cách truy hồi các câu mô tả chuẩn của con người để làm giàu ngữ cảnh. Tuy nhiên, các hệ thống RAG cơ sở (Kho tri thức cũ V1) bộc lộ ba nút thắt nghiêm trọng:
+Kỹ thuật Sinh tăng cường truy hồi (*Retrieval-Augmented Generation — RAG*) mở ra hướng tiếp cận triển vọng bằng cách truy hồi các câu mô tả chuẩn của con người để làm giàu ngữ cảnh. Tuy nhiên, các hệ thống RAG cơ sở (Kho tri thức cũ (Old SemKB)) bộc lộ ba nút thắt nghiêm trọng:
 * **Nhiễu trùng lặp ứng viên:** Các câu tương tự nhau về mặt từ vựng chiếm giữ toàn bộ danh sách truy hồi FAISS, làm triệt tiêu không gian chọn lọc đa dạng.
 * **So khớp ngữ nghĩa nông (Surface Matching):** Việc so khớp chỉ dựa trên cosine vector hoặc từ đơn Jaccard mà bỏ qua vai trò ngữ pháp: Chủ thể – Hành động – Quan hệ vị ngữ – Đối tượng (*Subject – Predicate – Object, SPO*).
 * **Nghẽn cổ chai biểu diễn:** Ép trung bình cộng nhiều câu tham chiếu thành 1 vector duy nhất (`Mean-Pooling`) làm mất mát các chi tiết ngữ nghĩa độc lập.
 
 ### Giải pháp Đề xuất: Kiến trúc SemRAG
 Để giải quyết triệt để các hạn chế trên, đề tài đề xuất mô hình **SemRAG** tích hợp:
-1. **Kho Tri Thức Cấu Trúc Đa Tầng Mới V2 (SemKB V2):** Bổ sung cờ khử trùng lặp `duplicate_of`, chuẩn hóa tập thực thể `objects`, gán nhãn tường minh quan hệ không gian `relations` (SPO), hành động `actions`, thuộc tính `attributes` và trọng số đồng thuận `TF-IDF 1..4-gram` toàn kho.
+1. **Kho Tri Thức Cấu Trúc Đa Tầng (SemKB):** Bổ sung cờ khử trùng lặp `duplicate_of`, chuẩn hóa tập thực thể `objects`, gán nhãn tường minh quan hệ không gian `relations` (SPO), hành động `actions`, thuộc tính `attributes` và trọng số đồng thuận `TF-IDF 1..4-gram` toàn kho.
 2. **Tái xếp hạng Lai dẫn dắt bởi Đồ thị cảnh RelTR & Lọc đa dạng MMR:** Kết hợp độ tương đồng CLIP với độ tương thích đồ thị cảnh SPO, kết hợp thuật toán Chọn lọc Biên Tối đa (MMR, $\lambda=0.7$) nhằm chọn ra $K=5$ câu vừa sát ngữ cảnh vừa phong phú về góc nhìn.
 3. **Bộ giải mã Hợp nhất Đa Token Có Cổng Động:** Lưu giữ trọn vẹn $K=5$ vector tham chiếu trong bộ nhớ độc lập ($K \times 256$), kết hợp cổng học thích nghi $g \in [0, 1]$ để cân bằng mềm dẻo giữa đặc trưng thị giác và tri thức bên ngoài.
 
@@ -77,7 +77,7 @@ Kiến trúc tổng thể của hệ thống gồm 4 khối chức năng (minh h
 |                                                                                             |
 |   +-----------------------+                         +-----------------------------------+   |
 |   |   KHỐI A: ĐẦU VÀO     |                         |   KHỐI C: KHO TRI THỨC ĐA TẦNG    |   |
-|   |                       |                         |              (SemKB V2)           |   |
+|   |                       |                         |              (SemKB)              |   |
 |   |  - Ảnh truy vấn       |                         |                                   |   |
 |   |  - CLIP ViT-B/32      |                         |  - 566.747 bản ghi đa tầng        |   |
 |   |    Nhúng đặc trưng    |                         |  - Cờ khử trùng lặp duplicate_of  |   |
@@ -92,7 +92,7 @@ Kiến trúc tổng thể của hệ thống gồm 4 khối chức năng (minh h
 |   |   KHỐI B: TRUY HỒI, MỞ RỘNG NGỮ NGHĨA & TÁI XẾP HẠNG LAI                            |   |
 |   |                                                                                     |   |
 |   |  1. FAISS IndexFlatIP truy vấn Top-N = 50 câu ứng viên                              |   |
-|   |  2. Mở rộng ngữ nghĩa qua láng giềng SPO đồng thuận trong Kho V2                    |   |
+|   |  2. Mở rộng ngữ nghĩa qua láng giềng SPO đồng thuận trong Kho SemKB                    |   |
 |   |  3. Điểm tái xếp hạng lai: S_rel = 0.6 * S_CLIP + 0.4 * S_SPO_Sem                   |   |
 |   |  4. Lọc đa dạng hóa biên tối đa (MMR, lambda = 0.7) chọn Top-K = 5 câu              |   |
 |   |  5. Tổng hợp nguyên mẫu cụm SPO (SPO Multi-Prototype)                               |   |
@@ -120,14 +120,14 @@ Kiến trúc tổng thể của hệ thống gồm 4 khối chức năng (minh h
 
 ### Khối B: Tái Xếp Hạng Ngữ Nghĩa & Lọc Đa Dạng MMR
 * **Truy xuất vector dày đặc:** FAISS (`IndexFlatIP`) truy vấn ban đầu $N = 50$ câu ứng viên dựa trên tích vô hướng cosine $\tilde{S}_{\text{CLIP}}(I, c_i)$.
-* **Tái xếp hạng lai:** Tính toán độ tương thích ngữ nghĩa $S_{\text{SPO-Sem}}$ giữa đồ thị cảnh ảnh truy vấn với các bộ ba có sẵn trong Kho V2:
+* **Tái xếp hạng lai:** Tính toán độ tương thích ngữ nghĩa $S_{\text{SPO-Sem}}$ giữa đồ thị cảnh ảnh truy vấn với các bộ ba có sẵn trong Kho SemKB:
   $$S_{\text{rel}}(I, c_i) = w \cdot \tilde{S}_{\text{CLIP}}(I, c_i) + (1 - w) \cdot S_{\text{SPO-Sem}}(G(I), G_{\text{KB}}(c_i)), \quad w = 0.6$$
 * **Lọc đa dạng hóa tối đa biên (MMR):** Chọn đúng $K = 5$ ứng viên đa dạng và loại trừ lặp ngữ nghĩa:
   $$\text{MMR} = \arg\max_{c_i \in C \setminus S} \left[ \lambda S_{\text{rel}}(I, c_i) - (1 - \lambda) \max_{c_j \in S} \text{Sim}(c_i, c_j) \right], \quad \lambda = 0.7$$
   với $\text{Sim}(c_i, c_j) = 0.65 \cdot \text{Sim}_{\text{CLIP}} + 0.35 \cdot \text{Jaccard}_{\text{SPO}}$.
 
-### Khối C: Kho Tri Thức Cấu Trúc Đa Tầng (SemKB V2)
-| Thông số Kỹ thuật | Kho COCO V2 (`knowledge_base_level4`) | Kho Flickr30k V2 (`knowledge_base_level4_Flick30K`) |
+### Khối C: Kho Tri Thức Cấu Trúc Đa Tầng (SemKB)
+| Thông số Kỹ thuật | Kho COCO (SemKB) | Kho Flickr30k (SemKB) |
 | :--- | :--- | :--- |
 | **Tổng số bản ghi** | **566.747 câu** (Train + Restval, 113.287 ảnh) | **145.000 câu** (Train, 29.000 ảnh) |
 | **Chỉ mục Vector** | CLIP ViT-B/32 (512 chiều, chuẩn hóa L2, `IndexFlatIP`) | CLIP ViT-B/32 (512 chiều, chuẩn hóa L2, `IndexFlatIP`) |
@@ -155,19 +155,19 @@ Toàn bộ các thực nghiệm tuân thủ **quy trình kiểm chứng đối c
 - Cố định từ điển (`vocab.json`, 16.214 từ trên COCO; 9.546 từ trên Flickr30k).
 - Chạy lặp lại và tính trung bình $\text{Mean} \pm \text{SD}$ trên đúng **3 Seeds chuẩn độc lập: `[42, 44, 46]`** trên 5.000 ảnh Karpathy Test (COCO) và 1.000 ảnh Test (Flickr30k).
 
-### Thực nghiệm Lũy tiến 5 Cấp độ trên MS COCO 2014
+### Thực Nghiệm Đối Chứng Các Mô Hình: VOB, WF-RAG, RR-RAG, GM-RAG và SemRAG trên MS COCO 2014
 
 Đánh giá trên tập 5.000 ảnh Karpathy Test của MS COCO 2014 (25.010 câu tham chiếu, chuẩn hóa bằng `SafePTBTokenizer`):
 
-| Cấp độ Mô hình (COCO 5.000 ảnh Test) | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | METEOR | ROUGE-L | CIDEr (Kho Mới V2) | CIDEr (Kho Cũ V1) | $\Delta$ CIDEr | SPICE (Kho Mới V2) |
+| Mô hình nghiên cứu & Cấu hình | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | METEOR | ROUGE-L | CIDEr (SemKB) | CIDEr (Old SemKB) | $\Delta$ CIDEr | SPICE (SemKB) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Level 1: Baseline** (Visual-Only, Beam=3) | 74.21±0.19 | 57.80±0.21 | 44.12±0.17 | 33.68±0.14 | 26.77±0.10 | 54.99±0.13 | **107.15 ± 0.74** | 107.15 | 0.00 | 19.73 ± 0.10 |
-| **Level 2: Basic RAG** (CLIP Top-5 Mean-Pool) | 74.92±0.10 | 58.54±0.04 | 44.78±0.02 | 34.34±0.02 | 27.41±0.04 | 55.84±0.01 | **112.52 ± 0.34** | 107.57 | **+4.95** | 20.16 ± 0.16 |
-| **Level 3: SPO Reranked RAG** (RelTR SPO) | 74.97±0.21 | 58.54±0.15 | 45.00±0.10 | 34.71±0.09 | 27.68±0.02 | 55.95±0.05 | **114.13 ± 0.28** | 110.64 | **+3.49** | 20.68 ± 0.03 |
-| **Level 4: Gated Multi-Token RAG** (5 Token) | 74.83±0.07 | 58.43±0.06 | 44.96±0.08 | 34.73±0.08 | 27.82±0.01 | 55.93±0.01 | **114.81 ± 0.20** | 110.97 | **+3.84** | 20.67 ± 0.04 |
-| **Level 5: Full Proposed SemRAG** (Hoàn chỉnh) | **74.92±0.05** | **58.57±0.03** | **45.13±0.04** | **34.90±0.06** | **27.85±0.02** | **56.01±0.01** | **115.41 ± 0.07** | 111.63 | **+3.78** | **20.76 ± 0.02** |
+| **VOB (Visual-Only Baseline)** (Beam=3, không dùng KB) | 74.21±0.19 | 57.80±0.21 | 44.12±0.17 | 33.68±0.14 | 26.77±0.10 | 54.99±0.13 | **107.15 ± 0.74** | 107.15 | 0.00 | 19.73 ± 0.10 |
+| **WF-RAG (Basic RAG)** (CLIP Top-5 Mean-Pool) | 74.92±0.10 | 58.54±0.04 | 44.78±0.02 | 34.34±0.02 | 27.41±0.04 | 55.84±0.01 | **112.52 ± 0.34** | 107.57 | **+4.95** | 20.16 ± 0.16 |
+| **RR-RAG (Scene-Graph Reranked RAG)** (RelTR SPO) | 74.97±0.21 | 58.54±0.15 | 45.00±0.10 | 34.71±0.09 | 27.68±0.02 | 55.95±0.05 | **114.13 ± 0.28** | 110.64 | **+3.49** | 20.68 ± 0.03 |
+| **GM-RAG (Gated Multi-Token RAG)** (5 Token, không MMR) | 74.83±0.07 | 58.43±0.06 | 44.96±0.08 | 34.73±0.08 | 27.82±0.01 | 55.93±0.01 | **114.81 ± 0.20** | 110.97 | **+3.84** | 20.67 ± 0.04 |
+| **SemRAG (Mô hình đề xuất hoàn chỉnh)** (RelTR+MMR+Gated) | **74.92±0.05** | **58.57±0.03** | **45.13±0.04** | **34.90±0.06** | **27.85±0.02** | **56.01±0.01** | **115.41 ± 0.07** | 111.63 | **+3.78** | **20.76 ± 0.02** |
 
-* Chi tiết điểm CIDEr từng Seed của Level 5: Seed 42 = **115.38**, Seed 44 = **115.36**, Seed 46 = **115.49**.
+* Chi tiết điểm CIDEr từng Seed của mô hình SemRAG: Seed 42 = **115.38**, Seed 44 = **115.36**, Seed 46 = **115.49**.
 * Tỷ lệ ảo giác thực thể trên tập COCO Test: $\text{CHAIR}_s = \mathbf{8.21 \pm 0.08\%}$, $\text{CHAIR}_i = \mathbf{7.18 \pm 0.06\%}$.
 
 ---
@@ -176,23 +176,23 @@ Toàn bộ các thực nghiệm tuân thủ **quy trình kiểm chứng đối c
 
 Đánh giá trên tập 1.000 ảnh Karpathy Test của Flickr30k qua 3 Seeds `[42, 44, 46]`:
 
-#### Phương Án A: Đánh giá Nội Miền (Huấn luyện trên Flickr30k + Kho Tri Thức Flickr30k V2)
-| Cấp độ Mô hình (Flickr30k — Phương Án A) | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr (Kho V2) | $\Delta$ so với L1 | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
+#### Phương Án A: Đánh giá Nội Miền (Huấn luyện trên Flickr30k + Kho Tri Thức Flickr30k SemKB)
+| Mô hình nghiên cứu | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr (SemKB) | $\Delta$ so với VOB | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Level 1 Baseline** | 68.85±0.38 | 25.89±0.24 | 21.10±0.13 | 48.14±0.16 | **53.85 ± 0.62** | 0.00 | 14.82±0.19 | 13.27±0.38 | 9.64±0.25 |
-| **Level 2 Basic RAG** | 67.66±0.22 | 25.21±0.09 | 21.44±0.02 | 48.20±0.12 | **58.29 ± 0.22** | +4.44 | 15.27±0.04 | 11.40±0.10 | 8.03±0.06 |
-| **Level 3 SPO Rerank**| 69.97±0.66 | 26.44±0.29 | 21.90±0.05 | 49.02±0.11 | **59.53 ± 0.18** | +5.68 | 15.63±0.05 | 10.57±0.12 | 7.68±0.21 |
-| **Level 4 Gated 5-Token**| 70.89±0.15 | 26.95±0.08 | 21.92±0.06 | 49.20±0.14 | **60.70 ± 0.18** | +6.85 | 15.68±0.05 | 9.63±0.06 | 7.19±0.03 |
-| **Level 5 Full SemRAG**| **71.04±0.18** | **27.26±0.07** | **22.03±0.06** | **49.37±0.10** | **61.98 ± 0.21** | **+8.13** | **15.77±0.01** | **8.63 ± 0.06** | **6.47 ± 0.05** |
+| **VOB (Mô hình cơ sở)** | 68.85±0.38 | 25.89±0.24 | 21.10±0.13 | 48.14±0.16 | **53.85 ± 0.62** | 0.00 | 14.82±0.19 | 13.27±0.38 | 9.64±0.25 |
+| **WF-RAG (Basic RAG)** | 67.66±0.22 | 25.21±0.09 | 21.44±0.02 | 48.20±0.12 | **58.29 ± 0.22** | +4.44 | 15.27±0.04 | 11.40±0.10 | 8.03±0.06 |
+| **RR-RAG (SPO Rerank)**| 69.97±0.66 | 26.44±0.29 | 21.90±0.05 | 49.02±0.11 | **59.53 ± 0.18** | +5.68 | 15.63±0.05 | 10.57±0.12 | 7.68±0.21 |
+| **GM-RAG (Gated Multi-Token)**| 70.89±0.15 | 26.95±0.08 | 21.92±0.06 | 49.20±0.14 | **60.70 ± 0.18** | +6.85 | 15.68±0.05 | 9.63±0.06 | 7.19±0.03 |
+| **SemRAG (Mô hình đề xuất hoàn chỉnh)**| **71.04±0.18** | **27.26±0.07** | **22.03±0.06** | **49.37±0.10** | **61.98 ± 0.21** | **+8.13** | **15.77±0.01** | **8.63 ± 0.06** | **6.47 ± 0.05** |
 
-#### Phương Án B: Thử Thách Zero-Shot Liên Miền (Model COCO + Kho COCO V2 chấm thẳng 1.000 ảnh Flickr30k)
-| Cấp độ Mô hình (COCO sang Flickr30k) | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr | $\Delta$ so với L1 | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
+#### Phương Án B: Thử Thách Zero-Shot Liên Miền (Model COCO + Kho COCO SemKB chấm thẳng 1.000 ảnh Flickr30k)
+| Mô hình nghiên cứu | BLEU-1 | BLEU-4 | METEOR | ROUGE-L | CIDEr | $\Delta$ so với VOB | SPICE | $\text{CHAIR}_s \downarrow$ (%) | $\text{CHAIR}_i \downarrow$ (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Level 1 COCO Baseline** | 58.79±0.01 | 17.12±0.03 | 17.23±0.03 | 41.02±0.05 | **37.83 ± 0.14** | 0.00 | 10.95±0.04 | 36.10±0.10 | 23.29±0.03 |
-| **Level 2 COCO Basic RAG** | 59.15±0.46 | 17.41±0.23 | 17.75±0.22 | 41.69±0.31 | **41.51 ± 0.99** | +3.68 | 11.35±0.14 | 26.80±0.10 | 17.48±0.10 |
-| **Level 3 COCO RelTR Rerank**| 59.73±0.18 | 18.16±0.03 | 17.98±0.11 | 42.08±0.20 | **42.93 ± 0.56** | +5.10 | 11.81±0.10 | 24.40±0.10 | 16.07±0.04 |
-| **Level 4 COCO Gated Multi** | 60.07±0.27 | 18.22±0.25 | 17.98±0.09 | 42.17±0.12 | **43.36 ± 0.24** | +5.53 | 11.92±0.11 | 22.10±0.10 | 14.84±0.07 |
-| **Level 5 COCO Full SemRAG** | **60.77±0.08** | **19.00±0.11** | **18.12±0.04** | **42.71±0.05** | **44.88 ± 0.21** | **+7.05 (+18,6%)**| **12.08±0.00** | **19.80 ± 0.10** | **13.82 ± 0.03** |
+| **VOB (COCO Baseline)** | 58.79±0.01 | 17.12±0.03 | 17.23±0.03 | 41.02±0.05 | **37.83 ± 0.14** | 0.00 | 10.95±0.04 | 36.10±0.10 | 23.29±0.03 |
+| **WF-RAG (COCO Basic RAG)** | 59.15±0.46 | 17.41±0.23 | 17.75±0.22 | 41.69±0.31 | **41.51 ± 0.99** | +3.68 | 11.35±0.14 | 26.80±0.10 | 17.48±0.10 |
+| **RR-RAG (COCO RelTR Rerank)**| 59.73±0.18 | 18.16±0.03 | 17.98±0.11 | 42.08±0.20 | **42.93 ± 0.56** | +5.10 | 11.81±0.10 | 24.40±0.10 | 16.07±0.04 |
+| **GM-RAG (COCO Gated Multi-Token)** | 60.07±0.27 | 18.22±0.25 | 17.98±0.09 | 42.17±0.12 | **43.36 ± 0.24** | +5.53 | 11.92±0.11 | 22.10±0.10 | 14.84±0.07 |
+| **SemRAG (COCO đề xuất hoàn chỉnh)** | **60.77±0.08** | **19.00±0.11** | **18.12±0.04** | **42.71±0.05** | **44.88 ± 0.21** | **+7.05 (+18,6%)**| **12.08±0.00** | **19.80 ± 0.10** | **13.82 ± 0.03** |
 
 > **Ý nghĩa thực nghiệm then chốt:** Không cần huấn luyện lại trên miền ảnh mới, SemRAG giúp tăng CIDEr từ **`37.83` lên `44.88` (+7.05 điểm, tương đương +18,64%)** và **kéo giảm tỷ lệ câu bị ảo giác $\text{CHAIR}_s$ từ `36.10%` xuống chỉ còn `19.80%` (giảm tới `16.30` điểm phần trăm)**.
 
@@ -202,9 +202,9 @@ Toàn bộ các thực nghiệm tuân thủ **quy trình kiểm chứng đối c
 
 Đánh giá trên 5.000 ảnh Karpathy Test của MS COCO 2014 qua 3 Seeds `[42, 44, 46]`:
 
-| Cấu hình Bóc tách | Tên Nhánh Notebook | BLEU-4 | METEOR | CIDEr (Kho V2) | $\Delta$ CIDEr | SPICE (Kho V2) | $\Delta$ SPICE |
+| Cấu hình Bóc tách | Tên Nhánh Notebook | BLEU-4 | METEOR | CIDEr (SemKB) | $\Delta$ CIDEr | SPICE (SemKB) | $\Delta$ SPICE |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Full Proposed SemRAG** | `Level 5 Baseline` | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **0.00** | **20.76 ± 0.02** | **0.00** |
+| **SemRAG (Mô hình đề xuất hoàn chỉnh)** | Pipeline đề xuất đầy đủ | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **0.00** | **20.76 ± 0.02** | **0.00** |
 | $\text{w/o MMR Diversity}$ (Tắt MMR) | `Ablation_01 (no_mmr)` | 34.83 ± 0.05 | 27.82 ± 0.02 | **114.70 ± 0.11** | **-0.72** | 20.66 ± 0.04 | **-0.10** |
 | $\text{w/o WordNet / SPO Expansion}$ | `Ablation_02 (no_semantic_expansion)` | 34.63 ± 0.11 | 27.74 ± 0.03 | **113.95 ± 0.14** | **-1.47** | 20.49 ± 0.02 | **-0.27** |
 | $\text{w/o Multi-Token Memory}$ (Mean-Pool)| `Ablation_04A (no_multitoken_only)` | 34.83 ± 0.09 | 27.75 ± 0.02 | **113.80 ± 0.05** | **-1.61** | 20.58 ± 0.03 | **-0.18** |
@@ -215,18 +215,18 @@ Toàn bộ các thực nghiệm tuân thủ **quy trình kiểm chứng đối c
 
 ---
 
-### Phân Tích Cô Lập Phương Thức Đầu Vào (Level 6 Chỉ Dùng Tri Thức)
+### Phân Tích Cô Lập Phương Thức Đầu Vào (Chế độ Chỉ Dùng Tri Thức tại Decoder)
 
-Thử nghiệm xóa trắng hoàn toàn đặc trưng thị giác ($v_{\text{img}} = \mathbf{0}, g = 1.0$) nhằm kiểm chứng sức mạnh biểu diễn của Kho tri thức SemKB V2:
+Thử nghiệm xóa trắng hoàn toàn đặc trưng thị giác ($v_{\text{img}} = \mathbf{0}, g = 1.0$) nhằm kiểm chứng sức mạnh biểu diễn của Kho tri thức SemKB:
 
 | Chế độ Phương thức Đầu vào | Giá trị Cổng $g$ | Tập ảnh Kiểm tra | BLEU-4 | METEOR | CIDEr (Mean ± SD) | SPICE |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Chỉ đặc trưng thị giác (Level 1 Baseline)** | $g = 0.00$ | 5.000 ảnh Test | 33.68 ± 0.14 | 26.77 ± 0.10 | **107.15 ± 0.74** | 19.73 ± 0.10 |
-| **Chỉ tri thức truy hồi — Kho Cũ V1** | $g = 1.00$ | 5.000 ảnh Test | 25.12 | 22.99 | **81.44** | 15.75 |
-| **Chỉ tri thức truy hồi — Kho Cũ V1** | $g = 1.00$ | 4.464 ảnh RelTR | 25.52 ± 0.10 | 23.21 ± 0.03 | **81.86 ± 0.08** | 15.83 ± 0.08 |
-| **Chỉ tri thức truy hồi — Kho Mới V2 (Level 6)**| $g = 1.00$ | 5.000 ảnh Test | 30.89 ± 0.02 | 26.06 ± 0.03 | **103.41 ± 0.16** *(+21.97 so với V1)* | 18.94 ± 0.02 |
-| **Chỉ tri thức truy hồi — Kho Mới V2 (Level 6)**| $g = 1.00$ | 4.464 ảnh RelTR | 31.56 ± 0.01 | 26.39 ± 0.02 | **104.75 ± 0.13** *(+22.89 so với V1)* | 19.20 ± 0.01 |
-| **Mô hình đề xuất SemRAG hoàn chỉnh (Level 5)**| $g \approx 0.50$ (học động) | 5.000 ảnh Test | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **20.76 ± 0.02** |
+| **VOB (Mô hình cơ sở chỉ dùng ảnh)** |  = 0.00$ | 5.000 ảnh Test | 33.68 ± 0.14 | 26.77 ± 0.10 | **107.15 ± 0.74** | 19.73 ± 0.10 |
+| **Chỉ tri thức truy hồi (Old SemKB)** |  = 1.00$ | 5.000 ảnh Test | 25.12 | 22.99 | **81.44** | 15.75 |
+| **Chỉ tri thức truy hồi (Old SemKB)** |  = 1.00$ | 4.464 ảnh RelTR | 25.52 ± 0.10 | 23.21 ± 0.03 | **81.86 ± 0.08** | 15.83 ± 0.08 |
+| **Chỉ tri thức truy hồi (SemKB)** |  = 1.00$ | 5.000 ảnh Test | 30.89 ± 0.02 | 26.06 ± 0.03 | **103.41 ± 0.16** *(+21.97 so với Old SemKB)* | 18.94 ± 0.02 |
+| **Chỉ tri thức truy hồi (SemKB)** |  = 1.00$ | 4.464 ảnh RelTR | 31.56 ± 0.01 | 26.39 ± 0.02 | **104.75 ± 0.13** *(+22.89 so với Old SemKB)* | 19.20 ± 0.01 |
+| **SemRAG (Mô hình đề xuất hoàn chỉnh)** |  \approx 0.50$ (học động) | 5.000 ảnh Test | **34.90 ± 0.06** | **27.85 ± 0.02** | **115.41 ± 0.07** | **20.76 ± 0.02** |
 
 ---
 
@@ -255,7 +255,7 @@ Thư mục `UngDung/` cung cấp mã nguồn ứng dụng web hoàn chỉnh ph�
 * **Frontend:** React 19, Vite, Tailwind CSS, Lucide Icons.
 * **Tính năng tiêu biểu:**
   - Hỗ trợ tải ảnh linh hoạt đa định dạng: `.png`, `.jpg`, `.jpeg`, `.webp`.
-  - Chế độ so sánh đối chiếu song song: **Baseline chỉ dùng ảnh ($g = 0$)** so với **SemRAG tích hợp SemKB V2 ($g \text{ thích nghi})$**.
+  - Chế độ so sánh đối chiếu song song: **Baseline chỉ dùng ảnh ($g = 0$)** so với **SemRAG tích hợp SemKB ($g \text{ thích nghi})$**.
   - Kiểm tra và trực quan hóa giá trị cổng đóng/mở $g$ cùng thanh trượt can thiệp thủ công.
   - Hiển thị danh sách $K=5$ câu tham khảo kèm điểm số và các bộ ba quan hệ RelTR SPO tương ứng.
   - Bảng chẩn đoán kỹ thuật (độ trễ xử lý, xác suất từ khóa, thông số bộ nhớ).
@@ -274,23 +274,23 @@ NghienCuu_Nhom2/
 ├── readme_va_prompt_ngucanh_toanbo_duan_kb_v2_nhom02.md           # Báo cáo kiểm định và siêu prompt ngữ cảnh
 │
 ├── Coco/                                                           # Thực nghiệm trên MS COCO 2014 (8 Notebooks)
-│   ├── Knowledge_Base_V2_Improved_Full.ipynb                       # Xây dựng SemKB V2 (566.747 câu)
+│   ├── Knowledge_Base_V2_Improved_Full.ipynb                       # Xây dựng SemKB (566.747 câu)
 │   ├── Baseline_Level_1_COCO2014_MultiSeed_BeamSearch_k3_Seed42.ipynb
 │   ├── Baseline_Level_1_COCO2014_MultiSeed_BeamSearch_k3_Seed44.ipynb
 │   ├── Baseline_Level_1_COCO2014_MultiSeed_BeamSearch_k3_Seed46.ipynb
-│   ├── DanhGia_Level2_3Seeds_CaiTien_COCO_KetQua3.ipynb            # Đánh giá Level 2 (Seeds 42, 44, 46)
-│   ├── DanhGia_Level3_3Seeds_CaiTien_COCO_KetQua3.ipynb            # Đánh giá Level 3 (Seeds 42, 44, 46)
-│   ├── DanhGia_Level4_3Seeds_CaiTien_COCO_KetQua6.ipynb            # Đánh giá Level 4 (Seeds 42, 44, 46)
-│   └── DanhGia_Level5_3Seeds_CaiTien_COCO_KetQua5.ipynb            # Đánh giá Level 5 Đề xuất (Seeds 42, 44, 46)
+│   ├── DanhGia_Level2_3Seeds_CaiTien_COCO_KetQua3.ipynb            # Đánh giá WF-RAG (Seeds 42, 44, 46)
+│   ├── DanhGia_Level3_3Seeds_CaiTien_COCO_KetQua3.ipynb            # Đánh giá RR-RAG (Seeds 42, 44, 46)
+│   ├── DanhGia_Level4_3Seeds_CaiTien_COCO_KetQua6.ipynb            # Đánh giá GM-RAG (Seeds 42, 44, 46)
+│   └── DanhGia_Level5_3Seeds_CaiTien_COCO_KetQua5.ipynb            # Đánh giá SemRAG Đề xuất Hoàn chỉnh (Seeds 42, 44, 46)
 │
 ├── flick30k/                                                       # Thực nghiệm trên Flickr30k (11 Notebooks)
 │   ├── PhuongAn_A/                                                 # Phương án A: Đánh giá nội miền Flickr30k
-│   │   ├── Tao_Kho_Tri_Thuc_V2_Flickr30k_CaiTien_KetQua.ipynb     # Xây dựng Kho Flickr30k V2 (145.000 câu)
-│   │   ├── DanhGia_Level1_3Seeds_Baseline_Flickr30k_KetQua.ipynb   # Level 1 Baseline (Seeds 42, 44, 46)
-│   │   ├── DanhGia_Level2_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 2 Basic RAG (Seeds 42, 44, 46)
-│   │   ├── DanhGia_Level3_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 3 SPO Rerank (Seeds 42, 44, 46)
-│   │   ├── DanhGia_Level4_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 4 Gated Multi (Seeds 42, 44, 46)
-│   │   └── DanhGia_Level5_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # Level 5 Full Proposed (Seeds 42, 44, 46)
+│   │   ├── Tao_Kho_Tri_Thuc_V2_Flickr30k_CaiTien_KetQua.ipynb     # Xây dựng Kho Flickr30k SemKB (145.000 câu)
+│   │   ├── DanhGia_Level1_3Seeds_Baseline_Flickr30k_KetQua.ipynb   # VOB Baseline Flickr30k (Seeds 42, 44, 46)
+│   │   ├── DanhGia_Level2_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # WF-RAG Flickr30k (Seeds 42, 44, 46)
+│   │   ├── DanhGia_Level3_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # RR-RAG Flickr30k (Seeds 42, 44, 46)
+│   │   ├── DanhGia_Level4_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # GM-RAG Flickr30k (Seeds 42, 44, 46)
+│   │   └── DanhGia_Level5_3Seeds_CaiTien_Flickr30k_KetQua.ipynb   # SemRAG Flickr30k Đề xuất Hoàn chỉnh (Seeds 42, 44, 46)
 │   │
 │   └── PhuongAn_B/                                                 # Phương án B: Zero-Shot Liên miền (COCO -> Flickr30k)
 │       ├── PA_B_BeNguyenCOCO_ChamFlickr30k_Level1_3Seeds_KetQua.ipynb
@@ -301,7 +301,7 @@ NghienCuu_Nhom2/
 │
 ├── Boc_Tach/                                                       # Bóc tách thành phần & Độ nhạy (8 Notebooks)
 │   ├── Chi_Dung_TriThuc/
-│   │   └── DanhGia_Level6_ChiDungTriThuc_KB_V2_COCO_KetQua.ipynb   # Cô lập phương thức (Chỉ dùng tri thức Level 6)
+│   │   └── DanhGia_Level6_ChiDungTriThuc_KB_V2_COCO_KetQua.ipynb   # Cô lập phương thức (Chế độ Chỉ dùng tri thức tại Decoder)
 │   ├── Tach_Dimersity/
 │   │   └── Ablation_01_Tach_MMR_Diversity_KB_V2_COCO_KetQua.ipynb # Lược bỏ MMR Diversity
 │   ├── Tach_Sematic/
@@ -354,7 +354,7 @@ pip install -r requirements.txt
 
 ### Tải Checkpoint & Kho Tri Thức từ Google Drive
 
-Do dung lượng các ma trận nhúng của SemKB V2 vượt quá giới hạn 100MB của GitHub, hệ thống cung cấp sẵn tập lệnh tự động tải về và kiểm tra toàn vẹn mã băm SHA-256:
+Do dung lượng các ma trận nhúng của SemKB vượt quá giới hạn 100MB của GitHub, hệ thống cung cấp sẵn tập lệnh tự động tải về và kiểm tra toàn vẹn mã băm SHA-256:
 
 ```bash
 cd UngDung
@@ -398,7 +398,7 @@ Mở tệp notebook tương ứng trong `Coco/`, `flick30k/`, hoặc `Boc_Tach/`
 
 ## 7. Trích Dẫn Khóa Luận (BibTeX)
 
-Nếu mã nguồn, phương pháp SemRAG hoặc bộ dữ liệu Kho tri thức SemKB V2 hữu ích cho công trình nghiên cứu của bạn, xin vui lòng trích dẫn:
+Nếu mã nguồn, phương pháp SemRAG hoặc bộ dữ liệu Kho tri thức SemKB hữu ích cho công trình nghiên cứu của bạn, xin vui lòng trích dẫn:
 
 ```bibtex
 @thesis{SemRAG_HUIT_2026,
