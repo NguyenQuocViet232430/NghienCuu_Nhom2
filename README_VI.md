@@ -141,7 +141,7 @@ Kiến trúc tổng thể của hệ thống gồm 4 khối chức năng (minh h
 * **Bộ nhớ Đa Token:** Giữ nguyên từng vector độc lập trong số $K = 5$ câu tham chiếu:
   $$M_{\text{knw}} \in \mathbb{R}^{B \times 5 \times 256}$$
 * **Hợp nhất cổng thích nghi:** Mạng nơ-ron cổng tính toán hệ số cân bằng $g \in [0, 1]$:
-  $$g = \sigma\left(W_g [v_{\text{norm}}; k_{\text{agg\_norm}}; \text{conf}] + b_g\right)$$
+  $$g = \sigma\left(W_g [v_{\text{norm}}; k_{\text{agg, norm}}; \text{conf}] + b_g\right)$$
 * **Chú ý chéo phân nhánh kép:**
   $$C_{\text{fused}} = (1 - g) \odot \text{CrossAttn}(Q, M_{\text{vis}}) + g \odot \text{CrossAttn}(Q, M_{\text{knw}})$$
 * **Suy luận:** Tìm kiếm chùm Beam Search (`beam_size = 3`, hệ số phạt độ dài $\alpha = 0.6$, chiều dài tối đa 30 từ).
