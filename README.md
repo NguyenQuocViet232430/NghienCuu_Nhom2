@@ -137,7 +137,7 @@ The overall architecture consists of four collaborative blocks as illustrated in
 * **Multi-Token Representation:** Retains all $K = 5$ retrieved vectors without averaging:
   $$M_{\text{knw}} \in \mathbb{R}^{B \times 5 \times 256}$$
 * **Dynamic Gated Fusion:** A lightweight neural gate predicts scalar balance coefficient $g \in [0, 1]$:
-  $$g = \sigma\left(W_g [v_{\text{norm}}; k_{\text{agg\_norm}}; \text{conf}] + b_g\right)$$
+  $$g = \sigma\left(W_g [v_{\text{norm}}; k_{\text{agg, norm}}; \text{conf}] + b_g\right)$$
 * **Dual-Branch Cross-Attention:**
   $$C_{\text{fused}} = (1 - g) \odot \text{CrossAttn}(Q, M_{\text{vis}}) + g \odot \text{CrossAttn}(Q, M_{\text{knw}})$$
 * **Inference:** Beam search (`beam_size = 3`, length penalty $\alpha = 0.6$, maximum length 30 tokens).
